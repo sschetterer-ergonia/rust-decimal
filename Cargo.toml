@@ -21,6 +21,7 @@ all-features = true
 bytemuck = { version = "1.7", features = ["derive"] }
 
 arbitrary = { default-features = false, optional = true, version = "1.0" }
+arrayref = { default-features = false, version = "0.3.6" }
 arrayvec = { default-features = false, version = "0.7" }
 borsh = { default-features = false, optional = true, version = "0.10.0" }
 byteorder = { default-features = false, optional = true, version = "1.0" }
@@ -89,6 +90,3 @@ tokio-pg = ["db-tokio-postgres"] # Backwards compatability
 harness = false
 name = "comparison"
 path = "benches/comparison.rs"
-
-[workspace]
-members = [".", "./macros"]

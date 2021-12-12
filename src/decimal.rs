@@ -982,27 +982,34 @@ impl Decimal {
         //   Bits 16-23: Contains "e", a value between 0-28 that indicates the scale
         //   Bits 24-30: unused
         //   Bit 31: the sign of the Decimal value, 0 meaning positive and 1 meaning negative.
-        let mut raw = Decimal::deserialize_raw(bytes);
+        let raw = Decimal::deserialize_raw(bytes);
         // Scale must be bound to maximum precision. Only two values can be greater than this
         if raw.scale() > MAX_PRECISION_U32 {
-            let mut bits = raw.mantissa_array3();
-            let remainder = match raw.scale() {
-                29 => ops::array::div_by_power::<1>(&mut bits),
-                30 => ops::array::div_by_power::<2>(&mut bits),
-                31 => ops::array::div_by_power::<3>(&mut bits),
-                _ => 0,
-            };
-            if remainder >= 5 {
-                ops::array::add_one_internal(&mut bits);
-            }
-            raw.lo = bits[0];
-            raw.mid = bits[1];
-            raw.hi = bits[2];
-            raw.flags = flags(raw.is_sign_negative(), MAX_PRECISION_U32);
+            Self::deserialize_fix(raw)
+        } else {
+            raw
         }
-        raw
     }
 
+    #[inline(never)]
+    #[cold]
+    fn deserialize_fix(mut raw: Decimal) -> Decimal {
+        let mut bits = raw.mantissa_array3();
+        let remainder = match raw.scale() {
+            29 => ops::array::div_by_power::<1>(&mut bits),
+            30 => ops::array::div_by_power::<2>(&mut bits),
+            31 => ops::array::div_by_power::<3>(&mut bits),
+            _ => 0,
+        };
+        if remainder >= 5 {
+            ops::array::add_one_internal(&mut bits);
+        }
+        raw.lo = bits[0];
+        raw.mid = bits[1];
+        raw.hi = bits[2];
+        raw.flags = flags(raw.is_sign_negative(), MAX_PRECISION_U32);
+        raw
+    }
     // Same as above, but returns an error if the scale is invalid
     #[must_use]
     #[inline(always)]
