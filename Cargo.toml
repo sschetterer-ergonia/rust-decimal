@@ -18,6 +18,8 @@ version = "1.31.0"
 all-features = true
 
 [dependencies]
+bytemuck = { version = "1.7", features = ["derive"] }
+
 arbitrary = { default-features = false, optional = true, version = "1.0" }
 arrayvec = { default-features = false, version = "0.7" }
 borsh = { default-features = false, optional = true, version = "0.10.0" }

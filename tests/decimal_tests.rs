@@ -1,3 +1,5 @@
+#![allow(clippy::to_string_in_format_args)]
+#![allow(clippy::excessive_precision)]
 mod macros;
 
 use core::{cmp::Ordering::*, str::FromStr};
@@ -123,6 +125,7 @@ fn it_can_serialize_deserialize() {
     for test in &tests {
         let a = Decimal::from_str(test).unwrap();
         let bytes = a.serialize();
+        assert_eq!(bytes, a.serialize_const());
         let b = Decimal::deserialize(bytes);
         assert_eq!(test.to_string(), b.to_string());
     }

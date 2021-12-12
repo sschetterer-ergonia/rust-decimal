@@ -23,6 +23,7 @@ macro_rules! bench_decimal_op {
 macro_rules! bench_fold_op {
     ($name:ident, $op:tt, $init:expr, $count:expr) => {
         #[bench]
+        #[allow(clippy::assign_op_pattern)]
         fn $name(b: &mut ::test::Bencher) {
             fn fold(values: &[Decimal]) -> Decimal {
                 let mut acc: Decimal = $init.into();
@@ -218,7 +219,7 @@ fn to_from_sql(b: &mut ::test::Bencher) {
 
     let samples: Vec<Decimal> = test::black_box(SAMPLE_STRS.iter().map(|x| Decimal::from_str(x).unwrap()).collect());
     let t = Type::new("".into(), 0, Kind::Simple, "".into());
-    let mut bytes: BytesMut = BytesMut::with_capacity(100).into();
+    let mut bytes: BytesMut = BytesMut::with_capacity(100);
 
     b.iter(|| {
         for _ in 0..100 {

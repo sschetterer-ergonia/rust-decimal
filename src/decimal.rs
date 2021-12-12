@@ -102,7 +102,8 @@ pub struct UnpackedDecimal {
 /// The finite set of values of type `Decimal` are of the form m / 10<sup>e</sup>,
 /// where m is an integer such that -2<sup>96</sup> < m < 2<sup>96</sup>, and e is an integer
 /// between 0 and 28 inclusive.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, bytemuck::Zeroable, bytemuck::Pod)]
+#[repr(C)]
 #[cfg_attr(
     all(feature = "diesel1", not(feature = "diesel2")),
     derive(FromSqlRow, AsExpression),
@@ -129,9 +130,9 @@ pub struct Decimal {
     flags: u32,
     // The lo, mid, hi, and flags fields contain the representation of the
     // Decimal value as a 96-bit integer.
-    hi: u32,
     lo: u32,
     mid: u32,
+    hi: u32,
 }
 
 #[cfg(feature = "ndarray")]
@@ -925,15 +926,9 @@ impl Decimal {
         self.flags = flags(self.is_sign_negative(), value_scale);
     }
 
-    /// Returns a serialized version of the decimal number.
-    /// The resulting byte array will have the following representation:
-    ///
-    /// * Bytes 1-4: flags
-    /// * Bytes 5-8: lo portion of `m`
-    /// * Bytes 9-12: mid portion of `m`
-    /// * Bytes 13-16: high portion of `m`
+    /// Constant but slower version of serialize - uses same data representation
     #[must_use]
-    pub const fn serialize(&self) -> [u8; 16] {
+    pub fn serialize_const(&self) -> [u8; 16] {
         [
             (self.flags & U8_MASK) as u8,
             ((self.flags >> 8) & U8_MASK) as u8,
@@ -954,6 +949,24 @@ impl Decimal {
         ]
     }
 
+    #[must_use]
+    #[inline(always)]
+    /// Returns a serialized version of the decimal number.
+    /// The resulting byte array will have the following representation:
+    ///
+    /// * Bytes 1-4: flags
+    /// * Bytes 5-8: lo portion of `m`
+    /// * Bytes 9-12: mid portion of `m`
+    /// * Bytes 13-16: high portion of `m`
+    pub fn serialize(&self) -> [u8; 16] {
+        bytemuck::cast(*self)
+    }
+
+    #[inline(always)]
+    fn deserialize_raw(bytes: [u8; 16]) -> Decimal {
+        bytemuck::cast(bytes)
+    }
+
     /// Deserializes the given bytes into a decimal number.
     /// The deserialized byte representation must be 16 bytes and adhere to the following convention:
     ///
@@ -962,19 +975,14 @@ impl Decimal {
     /// * Bytes 9-12: mid portion of `m`
     /// * Bytes 13-16: high portion of `m`
     #[must_use]
+    #[inline]
     pub fn deserialize(bytes: [u8; 16]) -> Decimal {
         // We can bound flags by a bitwise mask to correspond to:
         //   Bits 0-15: unused
         //   Bits 16-23: Contains "e", a value between 0-28 that indicates the scale
         //   Bits 24-30: unused
         //   Bit 31: the sign of the Decimal value, 0 meaning positive and 1 meaning negative.
-        let mut raw = Decimal {
-            flags: ((bytes[0] as u32) | (bytes[1] as u32) << 8 | (bytes[2] as u32) << 16 | (bytes[3] as u32) << 24)
-                & 0x801F_0000,
-            lo: (bytes[4] as u32) | (bytes[5] as u32) << 8 | (bytes[6] as u32) << 16 | (bytes[7] as u32) << 24,
-            mid: (bytes[8] as u32) | (bytes[9] as u32) << 8 | (bytes[10] as u32) << 16 | (bytes[11] as u32) << 24,
-            hi: (bytes[12] as u32) | (bytes[13] as u32) << 8 | (bytes[14] as u32) << 16 | (bytes[15] as u32) << 24,
-        };
+        let mut raw = Decimal::deserialize_raw(bytes);
         // Scale must be bound to maximum precision. Only two values can be greater than this
         if raw.scale() > MAX_PRECISION_U32 {
             let mut bits = raw.mantissa_array3();
@@ -993,6 +1001,19 @@ impl Decimal {
             raw.flags = flags(raw.is_sign_negative(), MAX_PRECISION_U32);
         }
         raw
+    }
+
+    // Same as above, but returns an error if the scale is invalid
+    #[must_use]
+    #[inline(always)]
+    pub fn try_deserialize(bytes: [u8; 16]) -> Option<Decimal> {
+        let raw = Decimal::deserialize_raw(bytes);
+        // Scale must be bound to maximum precision. Only two values can be greater than this
+        if raw.scale() > MAX_PRECISION_U32 {
+            None
+        } else {
+            Some(raw)
+        }
     }
 
     /// Returns `true` if the decimal is negative.
