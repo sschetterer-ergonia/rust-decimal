@@ -3,6 +3,7 @@
 extern crate test;
 
 use bincode::Options as _;
+use num_traits::FromPrimitive;
 use core::str::FromStr;
 use rust_decimal::Decimal;
 
@@ -161,6 +162,24 @@ const SAMPLE_STRS: &[&str] = &[
     "12340.56789",
 ];
 
+const SAMPLE_F64: &[f64] = &[
+    3950.123456,
+    3950.,
+    0.1,
+    0.01,
+    0.001,
+    0.0001,
+    0.00001,
+    0.000001,
+    1.,
+    -100.,
+    -123.456,
+    119996.25,
+    1000000.,
+    9999999.99999,
+    12340.56789,
+];
+
 #[bench]
 fn serialize_bincode(b: &mut test::Bencher) {
     let decimals: Vec<Decimal> = SAMPLE_STRS.iter().map(|s| Decimal::from_str(s).unwrap()).collect();
@@ -185,6 +204,16 @@ fn deserialize_bincode(b: &mut test::Bencher) {
         for payload in &payloads {
             let decimal: Decimal = bincode::options().deserialize(payload).unwrap();
             test::black_box(decimal);
+        }
+    })
+}
+
+#[bench]
+fn decimal_from_f64(b: &mut test::Bencher) {
+    b.iter(|| {
+        for s in SAMPLE_F64 {
+            let result = Decimal::from_f64(*s).unwrap();
+            test::black_box(result);
         }
     })
 }
