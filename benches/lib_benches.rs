@@ -3,8 +3,8 @@
 extern crate test;
 
 use bincode::Options as _;
-use num_traits::FromPrimitive;
 use core::str::FromStr;
+use num_traits::FromPrimitive;
 use rust_decimal::Decimal;
 
 macro_rules! bench_decimal_op {
