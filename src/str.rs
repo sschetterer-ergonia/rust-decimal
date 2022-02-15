@@ -748,7 +748,7 @@ mod test {
             parse_str_radix_10("11111_11111_11111.11111_11111_11195")
                 .unwrap()
                 .unpack(),
-            Decimal::from_i128_with_scale(1_111_111_111_111_111_111_111_111_1120, 14).unpack() // was Decimal::from_i128_with_scale(1_111_111_111_111_111_111_111_111_112, 13)
+            Decimal::from_i128_with_scale(11_111_111_111_111_111_111_111_111_120, 14).unpack() // was Decimal::from_i128_with_scale(1_111_111_111_111_111_111_111_111_112, 13)
         );
     }
 
