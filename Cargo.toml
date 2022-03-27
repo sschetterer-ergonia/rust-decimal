@@ -75,6 +75,7 @@ rkyv = ["dep:rkyv"]
 rkyv-safe = ["rkyv/validation"]
 rocket-traits = ["dep:rocket"]
 rust-fuzz = ["dep:arbitrary"]
+fuzzing = ["dep:arbitrary"]
 serde = ["dep:serde"]
 serde-arbitrary-precision = ["serde-with-arbitrary-precision"]
 serde-bincode = ["serde-str"] # Backwards compatability
