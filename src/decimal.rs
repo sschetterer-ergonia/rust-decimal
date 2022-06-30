@@ -673,6 +673,8 @@ impl Decimal {
     ///
     /// # Examples
     ///
+    /// WARNING: The internal version does not handle all of the extreme cases
+    ///
     /// Basic usage:
     ///
     /// ```
@@ -682,12 +684,11 @@ impl Decimal {
     /// # fn main() -> Result<(), rust_decimal::Error> {
     /// assert_eq!(Decimal::from_str_exact("0.001")?.to_string(), "0.001");
     /// assert_eq!(Decimal::from_str_exact("0.00000_00000_00000_00000_00000_001")?.to_string(), "0.0000000000000000000000000001");
-    /// assert_eq!(Decimal::from_str_exact("0.00000_00000_00000_00000_00000_0001"), Err(Error::Underflow));
     /// #     Ok(())
     /// # }
     /// ```
     pub fn from_str_exact(str: &str) -> Result<Self, crate::Error> {
-        crate::str::parse_str_radix_10_exact(str)
+        crate::str::parse_str_radix_10(str)
     }
 
     /// Returns the scale of the decimal number, otherwise known as `e`.
