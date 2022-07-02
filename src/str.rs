@@ -1,5 +1,5 @@
 use crate::{
-    constants::{BYTES_TO_OVERFLOW_U64, MAX_PRECISION, MAX_STR_BUFFER_SIZE, OVERFLOW_U96, WILL_OVERFLOW_U64},
+    constants::{MAX_PRECISION, MAX_STR_BUFFER_SIZE, MIGHT_OVERFLOW_U64_BYTES, OVERFLOW_U96, WILL_OVERFLOW_U64},
     error::{tail_error, Error},
     ops::array::{add_by_internal_flattened, add_one_internal, div_by_u32, is_all_zero, mul_by_u32},
     Decimal,
@@ -190,7 +190,8 @@ pub fn parse_str_radix_10_generic<D: StrParser>(str: &str) -> Result<D, D::Error
     let bytes = str.as_bytes();
     // handle the sign
 
-    if bytes.len() < BYTES_TO_OVERFLOW_U64 {
+    // at 18 we overflow u64
+    if bytes.len() <= (D::MAX_SCALE as usize).min(MIGHT_OVERFLOW_U64_BYTES) {
         parse_str_radix_10_dispatch::<D, false>(bytes)
     } else {
         parse_str_radix_10_dispatch::<D, true>(bytes)
@@ -200,7 +201,7 @@ pub fn parse_str_radix_10_generic<D: StrParser>(str: &str) -> Result<D, D::Error
 #[inline]
 pub fn parse_str_radix_10(str: &str) -> Result<Decimal, crate::Error> {
     let bytes = str.as_bytes();
-    if bytes.len() < BYTES_TO_OVERFLOW_U64 {
+    if bytes.len() <= (Decimal::MAX_SCALE as usize).min(MIGHT_OVERFLOW_U64_BYTES) {
         parse_str_radix_10_dispatch::<Decimal, false>(bytes)
     } else {
         parse_str_radix_10_dispatch::<Decimal, true>(bytes)

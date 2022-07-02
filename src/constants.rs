@@ -69,4 +69,4 @@ pub const U32_MAX: u64 = u32::MAX as u64;
 // Determines potential overflow for 128 bit operations
 pub const OVERFLOW_U96: u128 = 1u128 << 96;
 pub const WILL_OVERFLOW_U64: u64 = u64::MAX / 10 - u8::MAX as u64;
-pub const BYTES_TO_OVERFLOW_U64: usize = 18; // We can probably get away with less
+pub const MIGHT_OVERFLOW_U64_BYTES: usize = 18;
