@@ -426,7 +426,7 @@ fn maybe_round<D: StrParser>(
         match *b {
             b'0'..=b'9' => {
                 if digit.is_none() {
-                    digit = Some(u32::from(next_byte - b'0'));
+                    digit = Some(u32::from(*b - b'0'));
                 }
             }
             b'.' if !point => point = true,
