@@ -290,7 +290,7 @@ fn handle_digit_64<D: StrParser, const POINT: bool, const NEG: bool, const BIG: 
     if let Some((next, bytes)) = bytes.split_first() {
         let next = *next;
         if POINT && BIG && scale >= D::MAX_SCALE {
-            maybe_round(data64 as u128, next, scale, POINT, NEG)
+            maybe_round(data64 as u128, next, scale, POINT, NEG, bytes)
         } else if BIG && overflow_64(data64) {
             handle_full_128::<D, POINT, NEG>(data64 as u128, bytes, scale, next)
         } else {
@@ -354,6 +354,16 @@ fn handle_full_128<D: StrParser, const POINT: bool, const NEG: bool>(
                 if digit >= 5 {
                     data += 1;
                 }
+                // validate remaining bytes
+                let mut point = POINT;
+                for b in bytes {
+                    match *b {
+                        b'0'..=b'9' => (),
+                        b'.' if !point => point = true,
+                        b'_' => (),
+                        b => return tail_invalid_digit(b),
+                    }
+                }
                 handle_data::<D, NEG, true>(data, scale)
             } else {
                 data = next;
@@ -361,7 +371,7 @@ fn handle_full_128<D: StrParser, const POINT: bool, const NEG: bool>(
                 if let Some((next, bytes)) = bytes.split_first() {
                     let next = *next;
                     if POINT && scale >= D::MAX_SCALE {
-                        maybe_round(data, next, scale, POINT, NEG)
+                        maybe_round(data, next, scale, POINT, NEG, bytes)
                     } else {
                         handle_full_128::<D, POINT, NEG>(data, bytes, scale, next)
                     }
@@ -395,15 +405,36 @@ fn maybe_round<D: StrParser>(
     mut data: u128,
     next_byte: u8,
     scale: u8,
-    point: bool,
+    mut point: bool,
     negative: bool,
+    rest: &[u8],
 ) -> Result<D, D::Error> {
-    let digit = match next_byte {
-        b'0'..=b'9' => u32::from(next_byte - b'0'),
-        b'_' => 0, // this should be an invalid string?
-        b'.' if point => 0,
+    let mut digit = match next_byte {
+        b'0'..=b'9' => Some(u32::from(next_byte - b'0')),
+        b'_' => None, // this is accepted by the rust parser
+        b'.' if !point => {
+            point = true;
+            None
+        }
         b => return tail_invalid_digit(b),
     };
+
+    // We 1. Might need to recover a digit
+    // 2. Need to detect invalid digits off the end
+    for b in rest {
+        match *b {
+            b'0'..=b'9' => {
+                if digit.is_none() {
+                    digit = Some(u32::from(next_byte - b'0'));
+                }
+            }
+            b'.' if !point => point = true,
+            b'_' => (),
+            b => return tail_invalid_digit(b),
+        }
+    }
+
+    let digit = digit.unwrap_or(0);
 
     // Round at midpoint
     if digit >= 5 {
@@ -727,6 +758,21 @@ mod test {
                 .unpack(),
             Decimal::from_i128_with_scale(11_111_111_111_111_111_111_111_111_111, 14).unpack()
         );
+    }
+
+    #[test]
+    fn from_str_rounding_many_zeros() {
+        assert_eq!(
+            parse_str_radix_10("11111_11111_11111.11111_11111_111110000000000000000000000000000000")
+                .unwrap()
+                .unpack(),
+            Decimal::from_i128_with_scale(11_111_111_111_111_111_111_111_111_111, 14).unpack()
+        );
+    }
+
+    #[test]
+    fn from_str_rounding_invalid_at_end() {
+        assert!(parse_str_radix_10("11111_11111_11111.11111_11111_111110000000000000000000000000000000-").is_err());
     }
 
     #[test]
