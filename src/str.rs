@@ -188,6 +188,11 @@ pub(crate) fn fmt_scientific_notation(
 #[inline]
 pub fn parse_str_radix_10_generic<D: StrParser>(str: &str) -> Result<D, D::Error> {
     let bytes = str.as_bytes();
+    parse_bytes_radix_10_generic(bytes)
+}
+
+#[inline]
+pub fn parse_bytes_radix_10_generic<D: StrParser>(bytes: &[u8]) -> Result<D, D::Error> {
     // handle the sign
 
     // at 18 we overflow u64
