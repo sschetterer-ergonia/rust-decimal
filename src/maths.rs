@@ -49,102 +49,102 @@ const FACTORIAL: [Decimal; 28] = [
 
 /// Trait exposing various mathematical operations that can be applied using a Decimal. This is only
 /// present when the `maths` feature has been enabled.
-pub trait MathematicalOps {
+pub trait MathematicalOps: Sized {
     /// The estimated exponential function, e<sup>x</sup>. Stops calculating when it is within
     /// tolerance of roughly `0.0000002`.
-    fn exp(&self) -> Decimal;
+    fn exp(&self) -> Self;
 
     /// The estimated exponential function, e<sup>x</sup>. Stops calculating when it is within
     /// tolerance of roughly `0.0000002`. Returns `None` on overflow.
-    fn checked_exp(&self) -> Option<Decimal>;
+    fn checked_exp(&self) -> Option<Self>;
 
     /// The estimated exponential function, e<sup>x</sup> using the `tolerance` provided as a hint
     /// as to when to stop calculating. A larger tolerance will cause the number to stop calculating
     /// sooner at the potential cost of a slightly less accurate result.
-    fn exp_with_tolerance(&self, tolerance: Decimal) -> Decimal;
+    fn exp_with_tolerance(&self, tolerance: Self) -> Self;
 
     /// The estimated exponential function, e<sup>x</sup> using the `tolerance` provided as a hint
     /// as to when to stop calculating. A larger tolerance will cause the number to stop calculating
     /// sooner at the potential cost of a slightly less accurate result.
     /// Returns `None` on overflow.
-    fn checked_exp_with_tolerance(&self, tolerance: Decimal) -> Option<Decimal>;
+    fn checked_exp_with_tolerance(&self, tolerance: Self) -> Option<Self>;
 
     /// Raise self to the given integer exponent: x<sup>y</sup>
-    fn powi(&self, exp: i64) -> Decimal;
+    fn powi(&self, exp: i64) -> Self;
 
     /// Raise self to the given integer exponent x<sup>y</sup> returning `None` on overflow.
-    fn checked_powi(&self, exp: i64) -> Option<Decimal>;
+    fn checked_powi(&self, exp: i64) -> Option<Self>;
 
     /// Raise self to the given unsigned integer exponent: x<sup>y</sup>
-    fn powu(&self, exp: u64) -> Decimal;
+    fn powu(&self, exp: u64) -> Self;
 
     /// Raise self to the given unsigned integer exponent x<sup>y</sup> returning `None` on overflow.
-    fn checked_powu(&self, exp: u64) -> Option<Decimal>;
+    fn checked_powu(&self, exp: u64) -> Option<Self>;
 
     /// Raise self to the given floating point exponent: x<sup>y</sup>
-    fn powf(&self, exp: f64) -> Decimal;
+    fn powf(&self, exp: f64) -> Self;
 
     /// Raise self to the given floating point exponent x<sup>y</sup> returning `None` on overflow.
-    fn checked_powf(&self, exp: f64) -> Option<Decimal>;
+    fn checked_powf(&self, exp: f64) -> Option<Self>;
 
     /// Raise self to the given Decimal exponent: x<sup>y</sup>. If `exp` is not whole then the approximation
     /// e<sup>y*ln(x)</sup> is used.
-    fn powd(&self, exp: Decimal) -> Decimal;
+    fn powd(&self, exp: Self) -> Self;
 
     /// Raise self to the given Decimal exponent x<sup>y</sup> returning `None` on overflow.
     /// If `exp` is not whole then the approximation e<sup>y*ln(x)</sup> is used.
-    fn checked_powd(&self, exp: Decimal) -> Option<Decimal>;
+    fn checked_powd(&self, exp: Self) -> Option<Self>;
 
     /// The square root of a Decimal. Uses a standard Babylonian method.
-    fn sqrt(&self) -> Option<Decimal>;
+    fn sqrt(&self) -> Option<Self>;
 
     /// Calculates the natural logarithm for a Decimal calculated using Taylor's series.
-    fn ln(&self) -> Decimal;
+    fn ln(&self) -> Self;
 
     /// Calculates the checked natural logarithm for a Decimal calculated using Taylor's series.
     /// Returns `None` for negative numbers or zero.
-    fn checked_ln(&self) -> Option<Decimal>;
+    fn checked_ln(&self) -> Option<Self>;
 
     /// Calculates the base 10 logarithm of a specified Decimal number.
-    fn log10(&self) -> Decimal;
+    fn log10(&self) -> Self;
 
     /// Calculates the checked base 10 logarithm of a specified Decimal number.
     /// Returns `None` for negative numbers or zero.
-    fn checked_log10(&self) -> Option<Decimal>;
+    fn checked_log10(&self) -> Option<Self>;
 
     /// Abramowitz Approximation of Error Function from [wikipedia](https://en.wikipedia.org/wiki/Error_function#Numerical_approximations)
-    fn erf(&self) -> Decimal;
+    fn erf(&self) -> Self;
 
     /// The Cumulative distribution function for a Normal distribution
-    fn norm_cdf(&self) -> Decimal;
+    fn norm_cdf(&self) -> Self;
 
     /// The Probability density function for a Normal distribution.
-    fn norm_pdf(&self) -> Decimal;
+    fn norm_pdf(&self) -> Self;
 
     /// The Probability density function for a Normal distribution returning `None` on overflow.
-    fn checked_norm_pdf(&self) -> Option<Decimal>;
+    fn checked_norm_pdf(&self) -> Option<Self>;
 
     /// Computes the sine of a number (in radians).
     /// Panics upon overflow.
-    fn sin(&self) -> Decimal;
+    fn sin(&self) -> Self;
 
     /// Computes the checked sine of a number (in radians).
-    fn checked_sin(&self) -> Option<Decimal>;
+    fn checked_sin(&self) -> Option<Self>;
 
     /// Computes the cosine of a number (in radians).
     /// Panics upon overflow.
-    fn cos(&self) -> Decimal;
+    fn cos(&self) -> Self;
 
     /// Computes the checked cosine of a number (in radians).
-    fn checked_cos(&self) -> Option<Decimal>;
+    fn checked_cos(&self) -> Option<Self>;
 
     /// Computes the tangent of a number (in radians).
     /// Panics upon overflow or upon approaching a limit.
-    fn tan(&self) -> Decimal;
+    fn tan(&self) -> Self;
 
     /// Computes the checked tangent of a number (in radians).
     /// Returns None on limit.
-    fn checked_tan(&self) -> Option<Decimal>;
+    fn checked_tan(&self) -> Option<Self>;
 }
 
 impl MathematicalOps for Decimal {
