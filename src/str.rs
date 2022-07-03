@@ -12,9 +12,14 @@ use core::fmt;
 
 pub trait StrParser: Sized {
     const MAX_SCALE: u8;
+    const HANDLES_SCIENTIFIC: bool = false;
     type Error;
     fn overflows_at(mantissa: u128, scale: u8) -> bool;
     fn from_scale(mantissa: u128, scale: u8, is_negative: bool) -> Result<Self, Self::Error>;
+    fn from_scientific(mantissa: u128, scale: u8, is_negative: bool, exponent: i32) -> Result<Self, Self::Error> {
+        let _ = (mantissa, scale, is_negative, exponent);
+        unreachable!()
+    }
     fn error_from_string(err: &'static str) -> Self::Error;
 }
 
@@ -191,6 +196,7 @@ pub fn parse_str_radix_10_generic<D: StrParser>(str: &str) -> Result<D, D::Error
     parse_bytes_radix_10_generic(bytes)
 }
 
+/// SAFETY: passed bytes must be valid utf8
 #[inline]
 pub fn parse_bytes_radix_10_generic<D: StrParser>(bytes: &[u8]) -> Result<D, D::Error> {
     // handle the sign
@@ -257,6 +263,7 @@ fn non_digit_dispatch_u64<
         b'-' if FIRST && !HAS => dispatch_next::<D, false, true, false, BIG>(bytes, data64, scale),
         b'+' if FIRST && !HAS => dispatch_next::<D, false, false, false, BIG>(bytes, data64, scale),
         b'_' if HAS => handle_separator::<D, POINT, NEG, BIG>(bytes, data64, scale),
+        b'e' | b'E' if HAS && D::HANDLES_SCIENTIFIC => handle_scientific::<D, NEG>(bytes, data64 as u128, scale),
         b => tail_invalid_digit(b),
     }
 }
@@ -360,13 +367,16 @@ fn handle_full_128<D: StrParser, const POINT: bool, const NEG: bool>(
                 if digit >= 5 {
                     data += 1;
                 }
-                // validate remaining bytes
+                // validate remaining bytes - must handle exponential in here
                 let mut point = POINT;
-                for b in bytes {
+                let mut bytes = bytes;
+                while let Some((b, rest)) = bytes.split_first() {
+                    bytes = rest;
                     match *b {
                         b'0'..=b'9' => (),
                         b'.' if !point => point = true,
                         b'_' => (),
+                        b'e' | b'E' if D::HANDLES_SCIENTIFIC => return handle_scientific::<D, NEG>(bytes, data, scale),
                         b => return tail_invalid_digit(b),
                     }
                 }
@@ -401,6 +411,7 @@ fn handle_full_128<D: StrParser, const POINT: bool, const NEG: bool>(
                 handle_data::<D, NEG, true>(data, scale)
             }
         }
+        b'e' | b'E' if D::HANDLES_SCIENTIFIC => handle_scientific::<D, NEG>(bytes, data, scale),
         b => tail_invalid_digit(b),
     }
 }
@@ -415,6 +426,7 @@ fn maybe_round<D: StrParser>(
     negative: bool,
     rest: &[u8],
 ) -> Result<D, D::Error> {
+    let mut scientific = false;
     let mut digit = match next_byte {
         b'0'..=b'9' => Some(u32::from(next_byte - b'0')),
         b'_' => None, // this is accepted by the rust parser
@@ -422,24 +434,35 @@ fn maybe_round<D: StrParser>(
             point = true;
             None
         }
+        b'e' | b'E' if D::HANDLES_SCIENTIFIC => {
+            scientific = true;
+            None
+        }
         b => return tail_invalid_digit(b),
     };
 
     // We 1. Might need to recover a digit
     // 2. Need to detect invalid digits off the end
-    for b in rest {
-        match *b {
-            b'0'..=b'9' => {
-                if digit.is_none() {
-                    digit = Some(u32::from(*b - b'0'));
+    let mut bytes = rest;
+    if !scientific {
+        while let Some((b, rest)) = bytes.split_first() {
+            bytes = rest;
+            match *b {
+                b'0'..=b'9' => {
+                    if digit.is_none() {
+                        digit = Some(u32::from(*b - b'0'));
+                    }
                 }
+                b'.' if !point => point = true,
+                b'_' => (),
+                b'e' | b'E' if D::HANDLES_SCIENTIFIC => {
+                    scientific = true;
+                    break;
+                }
+                b => return tail_invalid_digit(b),
             }
-            b'.' if !point => point = true,
-            b'_' => (),
-            b => return tail_invalid_digit(b),
         }
     }
-
     let digit = digit.unwrap_or(0);
 
     // Round at midpoint
@@ -451,10 +474,15 @@ fn maybe_round<D: StrParser>(
         }
     }
 
-    if negative {
-        handle_data::<D, true, true>(data, scale)
-    } else {
-        handle_data::<D, false, true>(data, scale)
+    if !scientific {
+        debug_assert_eq!(bytes.len(), 0);
+    }
+
+    match (scientific, negative) {
+        (true, true) => handle_scientific::<D, true>(bytes, data, scale),
+        (true, false) => handle_scientific::<D, false>(bytes, data, scale),
+        (false, true) => handle_data::<D, true, true>(data, scale),
+        (false, false) => handle_data::<D, false, true>(data, scale),
     }
 }
 
@@ -469,6 +497,18 @@ fn handle_data<D: StrParser, const NEG: bool, const HAS: bool>(data: u128, scale
         tail_no_has()
     } else {
         D::from_scale(data, scale, NEG)
+    }
+}
+
+#[inline(never)]
+fn handle_scientific<D: StrParser, const NEG: bool>(bytes: &[u8], data: u128, scale: u8) -> Result<D, D::Error> {
+    let exp_str =
+        std::str::from_utf8(bytes).map_err(|_| D::error_from_string("non-ascii given to handle_scientific"))?;
+
+    if let Ok(exp) = exp_str.parse() {
+        D::from_scientific(data, scale, NEG, exp)
+    } else {
+        tail_error("Exponent could not be parsed")
     }
 }
 
