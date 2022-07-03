@@ -60,9 +60,6 @@ jobs:
       - name: Build rust-decimal
         run: cargo build --workspace --all-features # Important to keep this to ensure docs.rs passes
 
-      - name: Run no_std tests
-        run: cargo make test-no-std
-
       - name: Run default tests
         run: cargo make test-default
 
