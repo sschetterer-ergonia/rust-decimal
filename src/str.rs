@@ -87,12 +87,14 @@ pub(crate) fn to_str_internal(
     } else {
         0
     };
+    let mut point = false;
     for i in 0..whole_len + prec {
         if i == len - scale {
             if i == 0 {
                 rep.push('0');
             }
             rep.push('.');
+            point = true;
         }
 
         if i >= len {
@@ -106,6 +108,17 @@ pub(crate) fn to_str_internal(
     // corner case for when we truncated everything in a low fractional
     if rep.len() == empty_len {
         rep.push('0');
+    }
+
+    if precision.is_none() {
+        // Remove extra zeros after the decimal point
+        while rep.len() > 1 && rep.bytes().last() == Some(b'0') && point {
+            rep.pop();
+        }
+
+        if rep.len() > 1 && rep.bytes().last() == Some(b'.') {
+            rep.pop();
+        }
     }
 
     (rep, additional)
@@ -784,7 +797,7 @@ mod test {
     fn display_does_not_overflow_max_capacity() {
         let num = Decimal::from_str("1.2").unwrap();
         let mut buffer = ArrayString::<64>::new();
-        let _ = buffer.write_fmt(format_args!("{:.31}", num)).unwrap();
+        buffer.write_fmt(format_args!("{:.31}", num)).unwrap();
         assert_eq!("1.2000000000000000000000000000000", buffer.as_str());
     }
 

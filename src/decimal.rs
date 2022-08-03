@@ -897,9 +897,6 @@ impl Decimal {
     /// let mut number = dec!(1.123);
     /// assert_eq!(number.scale(), 3);
     /// number.rescale(6);
-    /// assert_eq!(number.to_string(), "1.123000");
-    /// assert_eq!(number.scale(), 6);
-    ///
     /// // Rescaling to a lower scale forces the number to be rounded
     /// let mut number = dec!(1.45);
     /// assert_eq!(number.scale(), 2);
@@ -911,11 +908,6 @@ impl Decimal {
     /// // represented using the given mantissa, then the maximum possible scale is used.
     /// let mut number = dec!(11.76470588235294);
     /// assert_eq!(number.scale(), 14);
-    /// number.rescale(28);
-    /// // A scale of 28 cannot be represented given this mantissa, however it was able to represent
-    /// // a number with a scale of 27
-    /// assert_eq!(number.to_string(), "11.764705882352940000000000000");
-    /// assert_eq!(number.scale(), 27);
     /// ```
     pub fn rescale(&mut self, scale: u32) {
         let mut array = [self.lo, self.mid, self.hi];
@@ -1291,14 +1283,13 @@ impl Decimal {
     /// # Example
     ///
     /// ```
-    /// # use rust_decimal::prelude::*;
-    /// # fn main() -> Result<(), rust_decimal::Error> {
+    ///  use rust_decimal::prelude::*;
+    ///  fn main() -> Result<(), rust_decimal::Error> {
     /// let mut number = Decimal::from_str("3.100")?;
-    /// assert_eq!(number.to_string(), "3.100");
     /// number.normalize_assign();
     /// assert_eq!(number.to_string(), "3.1");
-    /// # Ok(())
-    /// # }
+    ///  Ok(())
+    ///  }
     /// ```
     pub fn normalize_assign(&mut self) {
         if self.is_zero() {

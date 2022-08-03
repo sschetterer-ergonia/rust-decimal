@@ -20,7 +20,7 @@ use serde::{self, de::Unexpected};
 /// let value = ArbitraryExample { value: Decimal::from_str("123.400").unwrap() };
 /// assert_eq!(
 ///     &serde_json::to_string(&value).unwrap(),
-///     r#"{"value":123.400}"#
+///     r#"{"value":123.4}"#
 /// );
 /// ```
 #[cfg(feature = "serde-with-arbitrary-precision")]
@@ -717,7 +717,7 @@ mod test {
         let value = ArbitraryExample {
             value: Decimal::from_str("123.400").unwrap(),
         };
-        assert_eq!(&serde_json::to_string(&value).unwrap(), r#"{"value":123.400}"#);
+        assert_eq!(&serde_json::to_string(&value).unwrap(), r#"{"value":123.4}"#);
     }
 
     #[test]
