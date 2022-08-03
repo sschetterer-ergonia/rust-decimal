@@ -46,7 +46,7 @@ args = ["bench", "--features", "maths", "${@}"]
 [tasks.bench-legacy]
 toolchain = "nightly"
 command = "cargo"
-args = ["bench", "--no-default-features", "--features", "serde,std,legacy-ops", "${@}"]
+args = ["bench", "--features", "serde,std,legacy-ops", "${@}"]
 
 [tasks.benchcmp]
 dependencies = [
@@ -61,7 +61,7 @@ args = ["benchcmp", "target/legacy.bench", "target/default.bench"]
 script = "cargo +nightly bench > target/default.bench"
 
 [tasks.benchcmp-legacy]
-script = "cargo +nightly bench --no-default-features --features serde,std,legacy-ops > target/legacy.bench"
+script = "cargo +nightly bench --features serde,std,legacy-ops > target/legacy.bench"
 
 [tasks.coverage]
 dependencies = ["codecov-clean"]
@@ -94,7 +94,6 @@ args = [ "test", "-p", "rust_decimal", "--features=default"  ]
 
 # Always test no-std with std tests
 [tasks.test]
-dependencies = ["test-no-std"]
 command = "cargo"
 args = ["test"]
 
@@ -149,10 +148,6 @@ dependencies = [
 [tasks.test-macros]
 workspace = true
 
-[tasks.test-no-std]
-command = "cargo"
-args = ["test", "--no-default-features"]
-
 [tasks.test-default]
 command = "cargo"
 args = ["test", "--workspace", "--features=default"]
@@ -182,7 +177,7 @@ args = ["test", "--workspace", "--features=maths-nopanic", "maths", "--", "--ski
 
 [tasks.test-misc]
 command = "cargo"
-args = ["test", "--workspace", "--no-default-features", "--features=rust-fuzz", "rust_fuzz", "--", "--skip", "generated"]
+args = ["test", "--workspace", "--features=rust-fuzz", "rust_fuzz", "--", "--skip", "generated"]
 
 [tasks.test-db-mysql-all]
 dependencies = [
