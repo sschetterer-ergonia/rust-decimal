@@ -17,7 +17,7 @@ use serde::{self, de::Unexpected};
 ///     value: Decimal,
 /// }
 ///
-/// let value = ArbitraryExample { value: Decimal::from_str("123.400").unwrap() };
+/// let value = ArbitraryExample { value: Decimal::from_str("123.4").unwrap() };
 /// assert_eq!(
 ///     &serde_json::to_string(&value).unwrap(),
 ///     r#"{"value":123.4}"#
@@ -61,7 +61,7 @@ pub mod arbitrary_precision {
 /// let value = ArbitraryExample { value: Some(Decimal::from_str("123.400").unwrap()) };
 /// assert_eq!(
 ///     &serde_json::to_string(&value).unwrap(),
-///     r#"{"value":123.400}"#
+///     r#"{"value":123.4}"#
 /// );
 ///
 /// let value = ArbitraryExample { value: None };
@@ -882,7 +882,7 @@ mod test {
         let original = StringExample {
             value: Some(Decimal::from_str("123.400").unwrap()),
         };
-        assert_eq!(&serde_json::to_string(&original).unwrap(), r#"{"value":123.400}"#);
+        assert_eq!(&serde_json::to_string(&original).unwrap(), r#"{"value":123.4}"#);
         let deserialized: StringExample = serde_json::from_str(r#"{"value":123.400}"#).unwrap();
         assert_eq!(deserialized.value, original.value);
         assert!(deserialized.value.is_some());

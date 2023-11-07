@@ -516,7 +516,7 @@ fn handle_data<D: StrParser, const NEG: bool, const HAS: bool>(data: u128, scale
 #[inline(never)]
 fn handle_scientific<D: StrParser, const NEG: bool>(bytes: &[u8], data: u128, scale: u8) -> Result<D, D::Error> {
     let exp_str =
-        std::str::from_utf8(bytes).map_err(|_| D::error_from_string("non-ascii given to handle_scientific"))?;
+        core::str::from_utf8(bytes).map_err(|_| D::error_from_string("non-ascii given to handle_scientific"))?;
 
     if let Ok(exp) = exp_str.parse() {
         D::from_scientific(data, scale, NEG, exp)

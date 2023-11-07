@@ -19,7 +19,7 @@ fn it_can_parse_standard_decimal() {
         ("12000", dec!(12e3)),
     ];
     for &(a, b) in tests {
-        assert_eq!(a.to_string(), b);
+        assert_eq!(a, b.to_string());
     }
 }
 
